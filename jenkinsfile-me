@@ -1,0 +1,26 @@
+node{
+  def mavenHome = tool name: "maven3.8.2"
+  stage('1clone'){
+    //git "https://github.com/olaemmadayo/maven-web-application"
+    git branch: 'main', credentialsId: 'landmarkmaven-webapp', url: 'https://github.com/olaemmadayo/maven2-web'
+  }
+  stage('2Test+build'){
+    sh "${mavenHome}/bin/mvn clean package"
+  }
+  stage('3sonarqube'){
+  sh "${mavenHome}/bin/mvn sonar:sonar"  
+  }
+  stage('4UploadArtifacts'){
+    sh "${mavenHome}/bin/mvn deploy"  
+  }
+  stage('5Deployment'){
+    deploy adapters: [tomcat9(credentialsId: 'tomcat9-cridentials', path: '', url: 'http://52.90.74.255:8080/')], contextPath: null, war: 'target/*war'
+  }
+  stage('6Notification'){
+    emailext body: '''Hi Team 
+
+Build Status
+
+Landmark''', recipientProviders: [developers()], subject: 'build status', to: 'developers'
+  }
+}
